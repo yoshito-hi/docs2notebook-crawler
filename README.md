@@ -1,69 +1,56 @@
-# URL クローラーアプリの仕様書
+# Docs2Notebook Crawler
 
-**アプリ名：** Docs2Notebook Crawler（ドックス・ツー・ノートブック・クローラー）
+Docs2Notebook Crawler は、散らばったウェブドキュメントを一括でクロールし、ノイズを除去した上で1つの Markdown ファイルに統合するツールです。NotebookLM などの AI ツールに学習させるためのナレッジベース作成を自動化することを目的としています。
 
-## 課題
+## 主な機能
 
-* 新しい技術（例：Google Antigravity）をキャッチアップする際、公式ドキュメントが複数ページに散らばっており、全容を把握するのに時間がかかる。
-* NotebookLM などの AI ツールに学習させたいが、数十〜数百ある URL を手動でコピー＆ペーストしたり、PDF 化して結合するのは非効率的（「苦行」に近い）。
-* 既存の Web スクレイピングツールでは、JavaScript で動的に生成されるコンテンツ（SPA）がうまく取得できない場合がある。
-
-## ターゲット
-
-* **効率化を求めるエンジニア:** 新しい技術ドキュメントを「AI と対話しながら」爆速で理解したい人。
-* **自律型学習者:** 特定のドキュメントや Wiki を自分専用のナレッジベース（NotebookLM 等）に変換したい人。
+-   **インテリジェント・クローリング**: 指定したルート URL から開始し、同一ドメイン内のリンクを自動的に探索します。
+-   **SPA (Single Page Application) 対応**: Playwright を使用し、JavaScript の実行完了を待機してからコンテンツを取得するため、モダンなドキュメントサイトにも対応しています。
+-   **コンテンツの浄化**: ヘッダー、フッター、ナビゲーション、スクリプトなどの「ノイズ」を除去し、メインコンテンツのみを抽出します。
+-   **Markdown 変換**: 抽出した HTML を LLM が読みやすい Markdown 形式に変換します。
+-   **ソース明記**: 各セクションの冒頭に `Source URL` を自動付与し、生成 AI が参照元を特定できるようにします。
+-   **統合出力**: 全ページの内容を 1 つのファイル (`merged_docs.md`) にまとめて出力します。
 
 ## 技術スタック
 
-* **言語:** Python 3.10+
-* **ブラウザ操作 (Core):** `Playwright` (Python版)
-* *選定理由:* Google Antigravity のような SPA (Single Page Application) に対応するため、実際のブラウザエンジン（Chromium）をヘッドレスで動作させる必要があるため。Selenium よりも高速でモダン。
+-   **Language**: Python 3.10+
+-   **Browser Engine**: Playwright (Chromium)
+-   **HTML Parsing**: BeautifulSoup4
+-   **Markdown Conversion**: markdownify
+-   **Async Processing**: asyncio
 
+## セットアップ
 
-* **非同期処理:** `asyncio`
-* *選定理由:* 複数のページを効率よく（しかしサーバーに負荷をかけすぎず）処理するため。
+このプロジェクトでは Python のパッケージ管理に `uv` を推奨しています。
 
+1.  **依存関係のインストール**:
+    ```bash
+    uv sync
+    ```
 
-* **HTML解析 & 加工:** `BeautifulSoup4`
-* *選定理由:* 取得した HTML から「ヘッダー」「フッター」「サイドバー」などのノイズを除去し、メインコンテンツ（`<main>` や `<article>`）だけを抽出するため。
+2.  **ブラウザのインストール**:
+    ```bash
+    uv run playwright install chromium
+    ```
 
+## 使い方
 
-* **Markdown変換:** `markdownify`
-* *選定理由:* HTML を LLM (NotebookLM) が読みやすい Markdown 形式に変換するため。
+以下のコマンドでクロールを開始します：
 
+```bash
+uv run python main.py [開始URL] --output [出力ファイル名]
+```
 
+### 例:
+```bash
+uv run python main.py https://docs.python.org/ja/3/tutorial/ --output python_tutorial.md
+```
 
-## 機能要件 (Core Features)
+### オプション:
+-   `url`: 開始するルート URL (必須)
+-   `--output`, `-o`: 出力する Markdown ファイルのパス (デフォルト: `merged_docs.md`)
+-   `--concurrency`, `-c`: 並列リクエストの最大数 (デフォルト: 5)
+-   `--verbose`, `-v`: 詳細なログ出力を有効にします
 
-### 1. インテリジェント・クローリング
-
-* **ルート URL 指定:** ユーザーが指定した開始 URL (例: `.../docs/home`) から探索を開始する。
-* **ドメイン制限 (Scope Guard):** 指定されたドメイン（例: `antigravity.google`）外へのリンクは踏まないように制御し、無限クローリングを防ぐ。
-* **SPA 対応:** ページ遷移時、JavaScript の実行完了（`networkidle`）を待機してからコンテンツを取得する。
-
-### 2. コンテンツ抽出 & 浄化 (The "AI-Ready" Logic)
-
-* **メインコンテンツ抽出:** ナビゲーションメニューや広告を除外（`nav`, `footer`, `script` タグの削除）し、本文エリアのみを抽出する。
-* **Markdown 変換:** 抽出した HTML を Markdown に変換し、リンク構造や見出し構造を保持する。
-* **ソース明記:** 各セクションの冒頭に `Source URL: https://...` を自動付与し、NotebookLM で回答生成時に参照元が分かるようにする。
-
-### 3. 出力 (Output)
-
-* **単一ファイル結合:** 取得した全ページの内容を、最終的に**「1つの Markdown ファイル (`merged_docs.md`)」**として出力する。
-* *メリット:* NotebookLM へのアップロードが一回で済む。
-
-
-
-## 処理フロー概略
-
-1. **初期化:** ルート URL と許可ドメインを設定。
-2. **ブラウザ起動:** Playwright でヘッドレスブラウザを立ち上げる。
-3. **探索 (Crawl Loop):**
-* 未訪問 URL キューから URL を取り出す。
-* ページにアクセス & レンダリング待機。
-* HTML 取得 & 解析 (BeautifulSoup)。
-* ページ内のリンク (`a href`) を抽出し、未訪問かつ同ドメインならキューに追加。
-* メインコンテンツを Markdown 化してメモリに保持。
-
-
-4. **保存:** 全探索終了後、メモリ内のデータを結合してファイルに書き出し。
+## License
+MIT
