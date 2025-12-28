@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 仮想環境
+.venv/
+venv/
+ENV/
+env/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# プロジェクト固有
+*.md
+!README.md
+.agent/
+
+# 出力ファイル
+*.md
+merged_docs.md
+
+# その他
+.DS_Store
+*.log

@@ -20,7 +20,5 @@ htmlcov/
 # OS
 .DS_Store
 
-# Project specific outputs
-test.md
-output.md
-*.log
+# output
+output
