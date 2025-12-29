@@ -1,4 +1,6 @@
 import asyncio
+import random
+import time
 from playwright.async_api import async_playwright
 from .logger import setup_logger
 from .extractor import ContentExtractor
@@ -22,6 +24,10 @@ class DocsCrawler:
         # 結果をメモリに保持せず、直接ファイルに書き込むためのロック
         self.file_lock = asyncio.Lock()
 
+    def _get_random_sleep_time(self) -> float:
+        """1.0秒から3.0秒の間のランダムな数値を返します。"""
+        return random.uniform(1.0, 3.0)
+
     async def crawl_page(self, context, url):
         """
         単一のページをクロールし、コンテンツを抽出して新しいリンクを見つけます。
@@ -36,6 +42,9 @@ class DocsCrawler:
         try:
             # ページに移動し、ネットワークがアイドル状態になるまで待機（SPA対応）
             await page.goto(url, wait_until="networkidle", timeout=30000)
+            
+            # SPAの描画待ちなどのため、ランダムな時間待機
+            await asyncio.sleep(self._get_random_sleep_time())
             
             # コンテンツの抽出
             content = await page.content()
