@@ -128,7 +128,10 @@ docker run -it --rm \
 ├── src/
 │   ├── crawler.py       # Playwrightを使用したクローラーロジック
 │   ├── extractor.py     # HTML解析・Markdown変換・クリーニングロジック
+│   ├── url_manager.py   # URL管理・バリデーション・状態管理
 │   └── logger.py        # ロギング設定
+├── tests/
+│   └── test_url_manager.py # 単体テスト
 ├── pyproject.toml       # プロジェクト設定・依存関係
 ├── 仕様書.md            # 設計仕様書
 └── README.md            # 本ファイル

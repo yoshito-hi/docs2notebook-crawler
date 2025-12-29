@@ -29,8 +29,13 @@ def main():
             if not target_url:
                 print("エラー: URLは必須です。")
 
-        # === 2. 出力先ディレクトリ (デフォルト: Downloads) ===
-        default_download_dir = Path.home() / "Downloads"
+        # === 2. 出力先ディレクトリ (デフォルト: Downloads または Docker内なら /app/output) ===
+        docker_output_dir = Path("/app/output")
+        if docker_output_dir.exists():
+            default_download_dir = docker_output_dir
+        else:
+            default_download_dir = Path.home() / "Downloads"
+
         user_output_dir = input(f"\n[2/4] 出力先ディレクトリを指定 [デフォルト: {default_download_dir}]: ").strip()
         
         if user_output_dir:

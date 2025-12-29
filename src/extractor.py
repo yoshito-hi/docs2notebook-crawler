@@ -23,6 +23,12 @@ class ContentExtractor:
         for tag in soup(['script', 'style', 'nav', 'footer', 'iframe', 'noscript']):
             tag.decompose()
 
+        # 行番号や選択不可の要素（ノイズ）を削除
+        # select-none: Tailwindなどのユーティリティクラス（行番号によく使われる）
+        # line-number系: 一般的なシンタックスハイライターの行番号クラス
+        for tag in soup.find_all(class_=re.compile(r'line-number|linenumber|gutter|select-none', re.I)):
+            tag.decompose()
+
         # メインコンテンツの特定を試みる
         main_content = soup.find('main') or soup.find('article') or soup.find('div', class_=re.compile(r'content|main|body', re.I))
         
