@@ -1,6 +1,9 @@
 from bs4 import BeautifulSoup
 import markdownify
 import re
+from .logger import setup_logger
+
+logger = setup_logger(__name__)
 
 class ContentExtractor:
     """
@@ -28,6 +31,7 @@ class ContentExtractor:
             main_content = soup.body
 
         if not main_content:
+            logger.warning(f"コンテンツが見つかりませんでした: {source_url}")
             return f"Source URL: {source_url}\n\n(コンテンツが見つかりませんでした)"
 
         # Markdownに変換

@@ -51,6 +51,3 @@ COPY src/ ./src/
 
 # エントリーポイントの設定
 ENTRYPOINT ["uv", "run", "python", "main.py"]
-
-# デフォルトコマンド（ヘルプを表示）
-CMD ["--help"]

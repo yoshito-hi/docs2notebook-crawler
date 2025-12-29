@@ -5,6 +5,10 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 from src.crawler import DocsCrawler
+from src.logger import setup_logger
+
+# ロガーのセットアップ
+logger = setup_logger()
 
 def signal_handler(sig, frame):
     print("\n中断されました。終了します。")
@@ -15,19 +19,19 @@ signal.signal(signal.SIGTSTP, signal_handler)
 
 def main():
     try:
-        print("=== Docs2Notebook Crawler 設定 ===")
+        print("=== 📝 Docs2Notebook Crawler 設定 ===")
         print("各項目を設定してください（Enterでデフォルト値を使用）")
         
         # === 1. URL入力 (必須) ===
         target_url = ""
         while not target_url:
-            target_url = input("\n[1/5] 対象URLを入力 (例: https://docs.python.org): ").strip()
+            target_url = input("\n[1/4] 対象URLを入力 (例: https://docs.python.org): ").strip()
             if not target_url:
                 print("エラー: URLは必須です。")
 
         # === 2. 出力先ディレクトリ (デフォルト: Downloads) ===
         default_download_dir = Path.home() / "Downloads"
-        user_output_dir = input(f"\n[2/5] 出力先ディレクトリを指定 [デフォルト: {default_download_dir}]: ").strip()
+        user_output_dir = input(f"\n[2/4] 出力先ディレクトリを指定 [デフォルト: {default_download_dir}]: ").strip()
         
         if user_output_dir:
             output_dir_str = user_output_dir
@@ -36,7 +40,7 @@ def main():
 
         # === 3. 最大ページ数 (デフォルト: 20) ===
         max_pages = 20
-        user_max_pages = input(f"\n[3/5] 最大クロールページ数 [デフォルト: {max_pages}]: ").strip()
+        user_max_pages = input(f"\n[3/4] 最大クロールページ数 [デフォルト: {max_pages}]: ").strip()
         if user_max_pages:
             try:
                 max_pages = int(user_max_pages)
@@ -45,28 +49,12 @@ def main():
 
         # === 4. 並列リクエスト数 (デフォルト: 5) ===
         concurrency = 5
-        user_concurrency = input(f"\n[4/5] 並列リクエストの最大数 [デフォルト: {concurrency}]: ").strip()
+        user_concurrency = input(f"\n[4/4] 並列リクエストの最大数 [デフォルト: {concurrency}]: ").strip()
         if user_concurrency:
             try:
                 concurrency = int(user_concurrency)
             except ValueError:
                 print(f"警告: 数値ではないため、デフォルト値({concurrency})を使用します。")
-
-        # === 5. 詳細ログ出力 (デフォルト: No) ===
-        verbose = False
-        user_verbose = input(f"\n[5/5] 詳細なログ出力を有効にしますか? (y/N) [デフォルト: No]: ").strip().lower()
-        if user_verbose == 'y' or user_verbose == 'yes':
-            verbose = True
-
-        # ログ設定
-        logging.basicConfig(
-            level=logging.INFO if verbose else logging.WARNING,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
-        
-        # 自作モジュールのログレベルを設定
-        if verbose:
-            logging.getLogger("src").setLevel(logging.INFO)
 
         # 出力パスの構築
         output_dir = Path(output_dir_str).expanduser()
@@ -74,7 +62,7 @@ def main():
             try:
                 output_dir.mkdir(parents=True, exist_ok=True)
             except Exception as e:
-                logging.error(f"ディレクトリの作成に失敗しました: {e}")
+                logger.error(f"ディレクトリの作成に失敗しました: {e}")
                 return
 
         # URLからファイル名を生成
@@ -104,7 +92,6 @@ def main():
         print(f"  出力先     : {output_file_path}")
         print(f"  最大ページ : {max_pages}")
         print(f"  並列数     : {concurrency}")
-        print(f"  詳細ログ   : {'有効' if verbose else '無効'}")
         print("="*30 + "\n")
 
         # クローラーの初期化
@@ -118,11 +105,11 @@ def main():
         # 実行
         asyncio.run(crawler.run())
         
-        print("完了！")
+        print("🎉 完了しました！")
     except (KeyboardInterrupt, EOFError):
         print("\n中断されました。終了します。")
     except Exception as e:
-        print(f"\n予期しないエラーが発生しました: {e}")
+        logger.error(f"予期しないエラーが発生しました: {e}")
 
 if __name__ == "__main__":
     main()
